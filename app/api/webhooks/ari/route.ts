@@ -8,6 +8,7 @@ import { ariWebhookSecret } from "@/lib/ari/signature";
 import { getDb } from "@/lib/db";
 import { projects, webhookEvents } from "@/lib/db/schema";
 import { applyDecision, clearDecision } from "@/lib/review/decisions";
+import { syncReviewerLedgerSafely } from "@/lib/reviewers";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,9 @@ export async function POST(request: Request) {
   }
 
   const decision = decisionFromEvent(body);
+
+  // Live reviewer pay. Never throws; a payout problem must not fail Ari's delivery.
+  if (decision) await syncReviewerLedgerSafely("ari webhook");
   if (decision && projectId) {
     const result = await applyDecision({
       projectId,

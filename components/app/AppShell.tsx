@@ -4,8 +4,9 @@ import type { ReactNode } from "react";
 
 import { isOrganizer } from "@/lib/auth/organizer";
 import { getCurrentUser } from "@/lib/auth/users";
-import { APP_NAV, ORGANIZER_NAV } from "@/lib/nav";
+import { APP_NAV, ORGANIZER_NAV, REVIEWER_NAV } from "@/lib/nav";
 import type { NavItem } from "@/lib/nav";
+import { isReviewerSafely } from "@/lib/reviewers";
 
 import { NavLinks } from "./NavLinks";
 import styles from "./AppShell.module.css";
@@ -22,7 +23,12 @@ export async function AppShell({
   children: ReactNode;
 }) {
   const user = await getCurrentUser();
-  const nav: NavItem[] = isOrganizer(user) ? [...APP_NAV, ...ORGANIZER_NAV] : APP_NAV;
+  const reviewer = user ? await isReviewerSafely(user.slackId) : false;
+  const nav: NavItem[] = [
+    ...APP_NAV,
+    ...(reviewer ? REVIEWER_NAV : []),
+    ...(isOrganizer(user) ? ORGANIZER_NAV : []),
+  ];
 
   return (
     <>
