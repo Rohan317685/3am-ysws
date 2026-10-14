@@ -188,7 +188,7 @@ export async function reviewerSummaries(): Promise<ReviewerSummary[]> {
     owed: roundCents(Number(row.owed)),
     earned: roundCents(Number(row.earned)),
     paidOut: roundCents(Number(row.paidOut)),
-    lastPaidAt: row.lastPaidAt ? new Date(row.lastPaidAt) : null,
+    lastPaidAt: row.lastPaidAt,
   }));
 }
 
