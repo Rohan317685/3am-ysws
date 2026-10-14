@@ -113,6 +113,13 @@
       "when": 1791676800000,
       "tag": "0015_slack_order_digest",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791936000000,
+      "tag": "0016_reviewer_payouts",
+      "breakpoints": true
     }
   ]
 }

@@ -230,6 +230,92 @@ export const slackOrderDigestEvents = pgTable(
   ],
 );
 
+
+
+export const reviewerEntryKind = pgEnum("reviewer_entry_kind", ["review", "adjustment", "payout"]);
+
+// People who review 3am ships in Ari and get paid per review. Never hard-deleted:
+// removing a reviewer sets removedAt so their history and payouts stay intact.
+export const reviewers = pgTable(
+  "reviewers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slackId: text("slack_id").notNull(),
+    email: text("email"),
+    name: text("name").notNull(),
+    addedBy: text("added_by"),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+  },
+  (table) => [uniqueIndex("reviewers_slack_id_idx").on(table.slackId)],
+);
+
+// Ari reviews received before payoutsStart were already paid outside this
+// system: they show in history at $0 so nobody is paid twice.
+export const reviewerPayConfig = pgTable(
+  "reviewer_pay_config",
+  {
+    id: integer("id").primaryKey().default(1),
+    payoutsStart: timestamp("payouts_start", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check("reviewer_pay_config_singleton", sql`${table.id} = 1`)],
+);
+
+// Append-only money ledger. Balance owed = sum(delta). A payout writes -balance,
+// which takes the owed amount back to 0 while keeping every past row.
+export const reviewerLedger = pgTable(
+  "reviewer_ledger",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    reviewerId: uuid("reviewer_id")
+      .notNull()
+      .references(() => reviewers.id),
+    kind: reviewerEntryKind("kind").notNull(),
+    delta: numeric("delta", { precision: 12, scale: 2, mode: "number" }).notNull(),
+    // Set for kind = review: the Ari delivery that earned it. Unique, so a delivery pays once.
+    deliveryId: text("delivery_id"),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    decision: text("decision"),
+    approvedMinutes: integer("approved_minutes"),
+    note: text("note"),
+    createdBy: text("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("reviewer_ledger_reviewer_id_idx").on(table.reviewerId),
+    uniqueIndex("reviewer_ledger_delivery_id_idx").on(table.deliveryId),
+  ],
+);
+
+export const reviewerInvoiceStatus = pgEnum("reviewer_invoice_status", ["requested", "paid", "declined"]);
+
+// A reviewer asking to be paid. "requested" = in process. At most one open per reviewer.
+// Marking the reviewer paid (the tick) closes their open invoice.
+export const reviewerInvoices = pgTable(
+  "reviewer_invoices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reviewerId: uuid("reviewer_id")
+      .notNull()
+      .references(() => reviewers.id),
+    amount: numeric("amount", { precision: 12, scale: 2, mode: "number" }).notNull(),
+    status: reviewerInvoiceStatus("status").notNull().default("requested"),
+    note: text("note"),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    closedBy: text("closed_by"),
+    paidAmount: numeric("paid_amount", { precision: 12, scale: 2, mode: "number" }),
+    slackSentAt: timestamp("slack_sent_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("reviewer_invoices_reviewer_id_idx").on(table.reviewerId),
+    uniqueIndex("reviewer_invoices_one_open_idx")
+      .on(table.reviewerId)
+      .where(sql`${table.status} = 'requested'`),
+    check("reviewer_invoices_amount_positive", sql`${table.amount} > 0`),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Project = typeof projects.$inferSelect;
@@ -246,3 +332,6 @@ export type Item = typeof items.$inferSelect;
 export type NewItem = typeof items.$inferInsert;
 export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
+export type Reviewer = typeof reviewers.$inferSelect;
+export type ReviewerEntry = typeof reviewerLedger.$inferSelect;
+export type ReviewerInvoice = typeof reviewerInvoices.$inferSelect;
