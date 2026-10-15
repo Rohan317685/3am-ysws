@@ -120,6 +120,13 @@
       "when": 1791936000000,
       "tag": "0016_reviewer_payouts",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792022400000,
+      "tag": "0017_seed_reviewers",
+      "breakpoints": true
     }
   ]
 }
