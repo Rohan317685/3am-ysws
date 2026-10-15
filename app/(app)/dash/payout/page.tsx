@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/lib/auth/users";
 import {
   leaderboard,
   payoutsStart,
-  reviewerForSlackId,
+  reviewerForIdentity,
   reviewerHistory,
   reviewerSummaries,
   syncReviewerLedgerSafely,
@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PayoutPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
   const user = await getCurrentUser();
-  const me = await reviewerForSlackId(user?.slackId);
+  const me = await reviewerForIdentity(user?.slackId, user?.email);
   if (!me) notFound();
 
   const period = parsePeriod((await searchParams).period);

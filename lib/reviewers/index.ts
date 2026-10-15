@@ -251,22 +251,49 @@ export async function leaderboard(period: LeaderPeriod): Promise<LeaderRow[]> {
   return rows.map((row) => ({ ...row, earned: roundCents(Number(row.earned)) }));
 }
 
+export async function reviewerForIdentity(
+  slackId: string | null | undefined,
+  email: string | null | undefined,
+): Promise<Reviewer | null> {
+  const db = getDb();
+
+  // Slack ID is the primary identity and always wins if it matches.
+  if (slackId) {
+    const [bySlack] = await db
+      .select()
+      .from(reviewers)
+      .where(eq(reviewers.slackId, normaliseSlackId(slackId)))
+      .limit(1);
+    if (bySlack) return bySlack;
+  }
+
+  // Some people have changed the email on their Hack Club account. Fall back only
+  // to an exact, case-insensitive email match from the authenticated account.
+  if (email?.trim()) {
+    const [byEmail] = await db
+      .select()
+      .from(reviewers)
+      .where(sql`lower(${reviewers.email}) = ${normaliseEmail(email)}`)
+      .limit(1);
+    if (byEmail) return byEmail;
+  }
+
+  return null;
+}
+
 export async function reviewerForSlackId(
   slackId: string | null | undefined,
 ): Promise<Reviewer | null> {
-  if (!slackId) return null;
-  const [row] = await getDb()
-    .select()
-    .from(reviewers)
-    .where(eq(reviewers.slackId, normaliseSlackId(slackId)))
-    .limit(1);
-  return row ?? null;
+  return reviewerForIdentity(slackId, null);
 }
 
 // For the nav: never throws, so a missing table or DB blip cannot break every page.
-export async function isReviewerSafely(slackId: string | null | undefined): Promise<boolean> {
+export async function isReviewerSafely(
+  slackId: string | null | undefined,
+  email?: string | null,
+): Promise<boolean> {
   try {
-    const reviewer = await reviewerForSlackId(slackId);
+    const reviewer = await reviewerForIdentity(slackId, email);
     return Boolean(reviewer);
   } catch {
     return false;

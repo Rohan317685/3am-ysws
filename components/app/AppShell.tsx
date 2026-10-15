@@ -23,7 +23,7 @@ export async function AppShell({
   children: ReactNode;
 }) {
   const user = await getCurrentUser();
-  const reviewer = user ? await isReviewerSafely(user.slackId) : false;
+  const reviewer = user ? await isReviewerSafely(user.slackId, user.email) : false;
   const nav: NavItem[] = [
     ...APP_NAV,
     ...(reviewer ? REVIEWER_NAV : []),
