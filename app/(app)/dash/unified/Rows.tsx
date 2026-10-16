@@ -211,6 +211,19 @@ export function Rows({ rows }: { rows: ApprovedRow[] }) {
               <Button variant="quiet" onClick={() => show(row)} loading={working && !showing}>
                 {showing ? "hide" : "preview"}
               </Button>
+              {row.missing.length > 0 && row.state !== "sent" ? (
+                <Button
+                  variant="quiet"
+                  onClick={() => remind(row)}
+                  loading={working}
+                  loadingLabel="sending reminder…"
+                >
+                  remind on Slack
+                </Button>
+              ) : null}
+              {saved === `reminded:${row.projectId}` ? (
+                <span className={styles.savedNote}>Slack reminder sent</span>
+              ) : null}
               {row.state === "sent" ? (
                 showing ? (
                   <Button
