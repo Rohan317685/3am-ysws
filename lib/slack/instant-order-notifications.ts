@@ -41,17 +41,16 @@ export async function notifyOrderEventInstant(input: InstantOrderEvent): Promise
   const tracking = input.event === "shipped" && input.tracking?.trim()
     ? `\n*Tracking:* ${escapeSlackText(input.tracking.trim())}`
     : "";
-  const message = [
-    `📬 <@${recipients()[0] ?? ""}> ${title}`,
-    `*Item:* ${escapeSlackText(input.itemName)}`,
-    `*Maker:* ${escapeSlackText(input.makerName || "Unknown maker")}`,
-    `*Cost:* ${input.cost} beans`,
-    `*Order:* \`${escapeSlackText(input.orderId.slice(0, 8))}\``,
-    tracking,
-    link,
-  ].filter(Boolean).join("\n");
-
   await Promise.all(recipients().map(async (slackId) => {
+    const message = [
+      `📬 <@${slackId}> ${title}`,
+      `*Item:* ${escapeSlackText(input.itemName)}`,
+      `*Maker:* ${escapeSlackText(input.makerName || "Unknown maker")}`,
+      `*Cost:* ${input.cost} beans`,
+      `*Order:* `${escapeSlackText(input.orderId.slice(0, 8))}``,
+      tracking,
+      link,
+    ].filter(Boolean).join("\n");
     try {
       await sendSlackDm(slackId, message);
     } catch {
