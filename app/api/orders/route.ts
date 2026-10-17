@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/users";
 import { readAddress, validateAddress } from "@/lib/address";
 import { getDb } from "@/lib/db";
-import { beansLedger, items, orders, slackOrderDigestEvents, users } from "@/lib/db/schema";
+import { beansLedger, items, orders, users } from "@/lib/db/schema";
+import { notifyOrderEventInstant } from "@/lib/slack/instant-order-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
   if (!body.email?.includes("@")) return invalid("email", "That does not look like an email.");
 
   try {
-    const orderId = await getDb().transaction(async (tx) => {
+    const order = await getDb().transaction(async (tx) => {
       await tx.select({ sub: users.sub }).from(users).where(eq(users.sub, user.sub)).for("update");
 
       const [item] = await tx
@@ -107,23 +108,22 @@ export async function POST(request: Request) {
         note: item.name,
       });
 
-      await tx
-        .insert(slackOrderDigestEvents)
-        .values({
-          orderId: order.id,
-          eventType: "created",
-          payload: {
-            makerName: user.name || "Unknown maker",
-            itemName: item.name,
-            cost: item.cost,
-          },
-        })
-        .onConflictDoNothing();
-
-      return order.id;
+      return { id: order.id, itemName: item.name, cost: item.cost };
     });
 
-    return NextResponse.json({ ok: true, id: orderId });
+    try {
+      await notifyOrderEventInstant({
+        event: "created",
+        orderId: order.id,
+        makerName: user.name || "Unknown maker",
+        itemName: order.itemName,
+        cost: order.cost,
+      });
+    } catch {
+      console.warn("[orders] order saved but instant Slack notification failed");
+    }
+
+    return NextResponse.json({ ok: true, id: order.id });
   } catch (error) {
     const reason = error instanceof Error ? error.message : "failed";
 
