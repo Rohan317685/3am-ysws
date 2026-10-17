@@ -4,8 +4,9 @@ import { NextResponse } from "next/server";
 import { isOrganizer } from "@/lib/auth/organizer";
 import { getCurrentUser } from "@/lib/auth/users";
 import { getDb } from "@/lib/db";
-import { beansLedger, items, orders, slackOrderDigestEvents, users } from "@/lib/db/schema";
+import { beansLedger, items, orders, users } from "@/lib/db/schema";
 import { notifyOrderFulfilled } from "@/lib/slack/notifications";
+import { notifyOrderEventInstant } from "@/lib/slack/instant-order-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +87,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     let notification:
-      | { slackId: string; makerName: string; itemName: string }
+      | { slackId: string; makerName: string; itemName: string; orderId: string; cost: number; tracking: string | null }
       | null = null;
 
     if (newlyPosted) {
@@ -96,25 +97,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         .where(eq(users.sub, order.userSub))
         .limit(1);
 
-      await tx
-        .insert(slackOrderDigestEvents)
-        .values({
-          orderId: order.id,
-          eventType: "shipped",
-          payload: {
-            makerName: maker?.name || order.fullName?.trim() || "Unknown maker",
-            itemName: order.itemName,
-            cost: order.cost,
-            tracking: body.tracking !== undefined ? body.tracking.trim() || null : order.tracking,
-          },
-        })
-        .onConflictDoNothing();
-
       if (maker?.slackId) {
         notification = {
           slackId: maker.slackId,
           makerName: order.fullName?.trim() || maker.name || "there",
           itemName: order.itemName,
+          orderId: order.id,
+          cost: order.cost,
+          tracking: body.tracking !== undefined ? body.tracking.trim() || null : order.tracking,
         };
       }
     }
@@ -139,7 +129,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   if (result.notification) {
-    await notifyOrderFulfilled(result.notification);
+    await Promise.all([
+      notifyOrderFulfilled(result.notification),
+      notifyOrderEventInstant({
+        event: "shipped",
+        orderId: result.notification.orderId,
+        makerName: result.notification.makerName,
+        itemName: result.notification.itemName,
+        cost: result.notification.cost,
+        tracking: result.notification.tracking,
+      }),
+    ]);
   }
 
   return NextResponse.json({ ok: true });
