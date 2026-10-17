@@ -187,6 +187,45 @@ function payloadText(payload: Record<string, unknown>, key: string, fallback: st
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
+function organizerSlackIds(): string[] {
+  const configured = [
+    process.env.SLACK_ORDER_DIGEST_USER_ID,
+    ...(process.env.ORGANIZER_SLACK_IDS ?? "").split(","),
+  ];
+  return [...new Set(configured.map((value) => value?.trim()).filter((value): value is string => Boolean(value) && /^[UW][A-Z0-9]+$/.test(value)))];
+}
+
+export async function notifyUnifiedProjectApproved(projectId: string): Promise<void> {
+  try {
+    const [row] = await getDb()
+      .select({ project: projects, maker: users })
+      .from(projects)
+      .innerJoin(users, eq(users.sub, projects.userSub))
+      .where(eq(projects.id, projectId))
+      .limit(1);
+    if (!row || row.project.decision !== "approved") return;
+
+    const missing = missingForGrant(row.maker);
+    const unifiedUrl = appUrl("/dash/unified");
+    const settingsUrl = appUrl("/dash/settings");
+    const status = missing.length > 0
+      ? `⚠️ *Held for missing maker details:* ${escapeSlackText(missing.join(", "))}`
+      : "✅ Maker details look complete; ready for the Unified workflow.";
+    const message = [
+      "🆕 *New approved project in 3AM Unified*",
+      `*Project:* ${escapeSlackText(row.project.title)}`,
+      `*Maker:* ${escapeSlackText(row.maker.name || "Unknown maker")}`,
+      status,
+      unifiedUrl ? `<${unifiedUrl}|Open Unified submissions>` : "",
+      missing.length > 0 && settingsUrl ? `Maker settings: <${settingsUrl}|open settings>` : "",
+    ].filter(Boolean).join("\n");
+
+    await Promise.all(organizerSlackIds().map((slackId) => sendSlackDm(slackId, message)));
+  } catch {
+    console.warn("[slack] could not prepare new Unified project notification");
+  }
+}
+
 export async function notifyOrderDigest(
   slackId: string,
   events: SlackOrderDigestEvent[],
@@ -240,7 +279,7 @@ export async function notifyOrderDigest(
   });
 
   const message = [
-    `📬 *3AM order digest* — ${createdCount} new, ${shippedCount} shipped`,
+    `📬 <@${slackId}> *3AM order digest* — ${createdCount} new, ${shippedCount} shipped`,
     ...details,
     orderLink,
   ]
