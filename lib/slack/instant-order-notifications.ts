@@ -47,7 +47,7 @@ export async function notifyOrderEventInstant(input: InstantOrderEvent): Promise
       `*Item:* ${escapeSlackText(input.itemName)}`,
       `*Maker:* ${escapeSlackText(input.makerName || "Unknown maker")}`,
       `*Cost:* ${input.cost} beans`,
-      `*Order:* `${escapeSlackText(input.orderId.slice(0, 8))}``,
+      `*Order:* \`${escapeSlackText(input.orderId.slice(0, 8))}\``,
       tracking,
       link,
     ].filter(Boolean).join("\n");
