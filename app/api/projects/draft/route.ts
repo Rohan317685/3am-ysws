@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
   const title = body.title?.trim();
   if (!title) return NextResponse.json({ error: "no_title" }, { status: 422 });
-  const track = body.track === "hardware" ? "hardware" : "software";
+  const track: ProjectTrack = body.track === "hardware" ? "hardware" : "software";
 
   const db = getDb();
   const values = {
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, id: row.id });
   } catch (error) {
     const codes = [error, (error as { cause?: unknown })?.cause];
-    if (codes.some((value) => (value as { code?: string })?.code === "23505")) {
+    if (codes.some((value) => (value as { code?: string })?.cause === "23505")) {
       return NextResponse.json({ error: "duplicate_repo" }, { status: 409 });
     }
     throw error;
