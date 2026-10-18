@@ -15,6 +15,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { ProjectTrack } from "@/lib/review/types";
 
 export const users = pgTable("users", {
   sub: text("sub").primaryKey(),
@@ -48,6 +49,7 @@ export const projects = pgTable(
 
     title: text("title").notNull(),
     description: text("description"),
+    track: text("track").$type<ProjectTrack>().notNull().default("software"),
     repoUrl: text("repo_url"),
     demoUrl: text("demo_url"),
     thumbnailUrl: text("thumbnail_url"),
@@ -64,6 +66,7 @@ export const projects = pgTable(
   (table) => [
     index("projects_user_sub_idx").on(table.userSub),
     uniqueIndex("projects_user_sub_repo_url_idx").on(table.userSub, table.repoUrl),
+    check("projects_track_check", sql`${table.track} in ('hardware', 'software')`),
   ],
 );
 
