@@ -9,6 +9,7 @@ import { missingForGrant } from "@/lib/grant";
 
 import { buildPayload, send } from "./client";
 import { ensureOutbox, findOutbox } from "./outbox";
+import { lastNameFlag } from "./lastName";
 import type { ApprovedRow, GateProblem, PendingRow } from "./types";
 import { validate } from "./validate";
 
@@ -62,6 +63,11 @@ export async function readApproved(): Promise<ApprovedRow[]> {
     projectId: project.id,
     title: project.title,
     maker: maker.name,
+    makerSub: maker.sub,
+    slackId: maker.slackId,
+    firstName: maker.firstName,
+    lastName: maker.lastName,
+    lastNameFlag: lastNameFlag(maker.firstName, maker.lastName),
     email: maker.email,
     decidedAt: project.decidedAt,
     approvedMinutes: project.approvedMinutes,
@@ -71,6 +77,7 @@ export async function readApproved(): Promise<ApprovedRow[]> {
     error: submission?.error ?? null,
     ageJustification: submission?.ageJustification ?? null,
     duplicateJustification: submission?.duplicateJustification ?? null,
+    nameJustification: submission?.nameJustification ?? null,
     missing: missingForGrant(maker),
   }));
 }
@@ -148,6 +155,7 @@ async function readOne(projectId: string): Promise<PendingRow | null> {
     hoursJustification: submission?.hoursJustification ?? null,
     ageJustification: submission?.ageJustification ?? null,
     duplicateJustification: submission?.duplicateJustification ?? null,
+    nameJustification: submission?.nameJustification ?? null,
 
     commits: project.repoUrl ? await repoCommitCount(project.repoUrl) : null,
     sharedCodeUrl: shared.length > 1,
@@ -166,6 +174,7 @@ export type Overrides = {
   overrideMinutes: number | null;
   ageJustification: string | null;
   duplicateJustification: string | null;
+  nameJustification: string | null;
 };
 
 export async function saveOverrides(projectId: string, values: Overrides): Promise<boolean> {
