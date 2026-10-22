@@ -1,4 +1,4 @@
-import { and, desc, eq, notInArray, sql } from "drizzle-orm";
+import { desc, eq, notInArray, sql } from "drizzle-orm";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -19,7 +19,6 @@ import {
   beansLedger,
   orders,
   projects,
-  reviewerInvoices,
   reviewerLedger,
   reviewers,
   users,
