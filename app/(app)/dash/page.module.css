@@ -23,3 +23,131 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding: var(--s4) 0 var(--s2);
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.welcome h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  line-height: 1.15;
+}
+
+.muted,
+.none {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.muted {
+  margin: 8px 0 0;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4);
+  align-items: start;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: var(--s3);
+}
+
+.panelLink {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.panelLink:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.status {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  text-align: right;
+  text-transform: capitalize;
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.rankRow:last-child {
+  border-bottom: 0;
+}
+
+.rank {
+  min-width: 26px;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+}
+
+.rankName {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.rankCount {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.none {
+  margin: 0;
+  padding: 8px 0;
+}
+
+@media (max-width: 900px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome {
+    align-items: flex-start;
+  }
+}
