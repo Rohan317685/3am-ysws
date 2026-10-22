@@ -35,7 +35,8 @@
 
 .eyebrow {
   margin: 0 0 6px;
-  color: var(--ink-muted);
+  color: inherit;
+  opacity: 0.72;
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -80,7 +81,7 @@
 }
 
 .panelLink:hover {
-  color: var(--ink);
+  color: var(--lamp);
   text-decoration: underline;
 }
 
@@ -102,7 +103,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--rule);
 }
 
 .rankRow:last-child {
