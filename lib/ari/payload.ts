@@ -1,5 +1,6 @@
 import { isVideoLink } from "@/lib/links";
 import type { ReviewSubmission } from "@/lib/review/types";
+import type { JournalEntry } from "./journal";
 
 export type IngestPayload = {
   external_id: string;
@@ -11,6 +12,8 @@ export type IngestPayload = {
   thumbnail_url: string;
   hackatime_projects: string[];
   evidence: string[];
+  journals?: JournalEntry[];
+  meta?: Record<string, string>;
   track: "hardware" | "software";
   is_update?: boolean;
   update_message?: string;
@@ -30,7 +33,10 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
-export function validateSubmission(submission: ReviewSubmission): ValidationError | null {
+export function validateSubmission(
+  submission: ReviewSubmission,
+  { requireEvidence = true }: { requireEvidence?: boolean } = {},
+): ValidationError | null {
   const text: [string, string][] = [
     ["title", submission.title],
     ["description", submission.description],
@@ -63,10 +69,14 @@ export function validateSubmission(submission: ReviewSubmission): ValidationErro
     };
   }
 
-  if (submission.hackatimeProjects.length === 0) {
+  if (
+    requireEvidence &&
+    !submission.hackatimeProjects.some((name) => name.trim()) &&
+    !submission.journals?.length
+  ) {
     return {
       field: "hackatime_projects",
-      message: "Pick at least one Hackatime project, or we cannot count any hours.",
+      message: "Pick a Hackatime project or add dated entries with hours to journal.md in your repository root.",
     };
   }
 
@@ -94,6 +104,14 @@ export function buildIngestPayload(submission: ReviewSubmission): IngestPayload 
     evidence: EVIDENCE,
     track: submission.track,
   };
+
+  if (submission.journals?.length) {
+    payload.journals = submission.journals;
+    payload.meta = {
+      "Time evidence": "Devlog entries from journal.md. Journal hours are self-reported and subject to reviewer adjustment.",
+    };
+    if (submission.journalUrl) payload.meta["Devlog source"] = submission.journalUrl;
+  }
 
   if (submission.updateMessage?.trim()) {
     payload.is_update = true;

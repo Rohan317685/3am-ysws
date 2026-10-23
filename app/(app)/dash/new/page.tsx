@@ -29,16 +29,16 @@ export default async function NewProjectPage() {
         </Banner>
       ) : projects === null ? (
         <Banner tone="warn" title="hackatime is not connected">
-          Without it you cannot pick your projects, and a name typed by hand that does not match
-          counts as zero hours.
+          You can submit using dated devlogs in journal.md, or connect Hackatime to include tracked time.
         </Banner>
       ) : null}
       {!open ? (
         <ButtonLink href="/dash">back to dashboard</ButtonLink>
-      ) : projects === null ? (
-        <ButtonLink href="/dash/connect">connect Hackatime</ButtonLink>
       ) : (
-        <SubmitForm projects={projects} />
+        <>
+          {projects === null ? <ButtonLink href="/dash/connect">connect Hackatime</ButtonLink> : null}
+          <SubmitForm projects={projects ?? []} />
+        </>
       )}
     </AppShell>
   );

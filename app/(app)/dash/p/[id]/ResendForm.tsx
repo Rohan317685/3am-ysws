@@ -68,13 +68,14 @@ export function ResendForm({ project, options }: { project: ResendDefaults; opti
       <PanelLabel>fix it and send it back</PanelLabel>
       <div className={styles.form}>
         {problem && !problem.field ? <Banner tone="bad">{problem.message}</Banner> : null}
+        {errorFor("journals") ? <Banner tone="bad">{errorFor("journals")}</Banner> : null}
         <Field id={`${ids}-what`} label="what changed?" help="Goes straight to the reviewer who asked." error={errorFor("update_message")}>
           <Textarea value={updateMessage} onChange={(event) => setUpdateMessage(event.target.value)} />
         </Field>
         <Field id={`${ids}-track`} label="project type" help="Choose Hardware or Software." error={errorFor("track")}>
           <select id={`${ids}-track`} className={styles.select} value={track} required onChange={(event) => setTrack(event.target.value as ProjectTrack)}>
-            <option value="software">Software — website, game, app, or tool</option>
-            <option value="hardware">Hardware — physical build or electronics</option>
+            <option value="software">Software: website, game, app, or tool</option>
+            <option value="hardware">Hardware: physical build or electronics</option>
           </select>
         </Field>
         <div className={styles.row}>
@@ -86,7 +87,7 @@ export function ResendForm({ project, options }: { project: ResendDefaults; opti
           <Field id={`${ids}-demo`} label="demo link" help="A live link, or a build people can download and run." error={errorFor("demo_url")}><Input value={demoUrl} onChange={(event) => setDemoUrl(event.target.value)} /></Field>
           <Field id={`${ids}-thumb`} label="screenshot" error={errorFor("thumbnail_url")}><ThumbnailField value={thumbnailUrl} onChange={setThumbnailUrl} /></Field>
         </div>
-        <Field id={`${ids}-projects`} label="hackatime projects" error={errorFor("hackatime_projects")}><HackatimePicker options={options} value={picked} onChange={setPicked} /></Field>
+        <Field id={`${ids}-projects`} label="hackatime projects" help="Optional with journal.md. Use dated ## headings with hours, such as ## 2026-10-23 Finished routing - 3.2 hours. We read the latest journal when you resend. Only log time that is not already tracked in Hackatime." error={errorFor("hackatime_projects")}><HackatimePicker options={options} value={picked} onChange={setPicked} /></Field>
         <div className={styles.actions}><Button onClick={resend} loading={sending} loadingLabel="sending…">send it back</Button></div>
       </div>
     </Panel>

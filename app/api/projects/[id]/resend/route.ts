@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import { validateSubmission } from "@/lib/ari/payload";
+import { prepareSubmission } from "@/lib/review/prepare";
 import { repoHasReadme, repoIsReachable } from "@/lib/ari/repo";
 import { getCurrentUser } from "@/lib/auth/users";
 import { getDb } from "@/lib/db";
@@ -88,12 +88,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     updateMessage: body.updateMessage,
   };
 
-  const problem = validateSubmission(submission);
-  if (problem) {
+  const prepared = await prepareSubmission(submission);
+  if (prepared.status === "rejected") {
     return NextResponse.json(
-      { error: "invalid", field: problem.field, message: problem.message },
+      { error: "invalid", field: prepared.field, message: prepared.message },
       { status: 422 },
     );
+  }
+  if (prepared.status === "unavailable") {
+    return NextResponse.json({ error: "unavailable", message: prepared.message }, { status: 503 });
   }
 
   if ((await repoIsReachable(submission.repoUrl)) === false) {
@@ -118,7 +121,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  const outcome = await getReviewBackend().submit(submission);
+  const outcome = await getReviewBackend().submit(prepared.submission);
 
   if (outcome.status === "rejected") {
     return NextResponse.json(

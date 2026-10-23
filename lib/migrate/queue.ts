@@ -57,7 +57,11 @@ export async function readQueued(): Promise<QueuedRow[]> {
       maker: { email: row.email, name: row.name, slackId: row.slackId },
     };
 
-    return { submission, submittedAt: row.submittedAt, problem: validateSubmission(submission) };
+    return {
+      submission,
+      submittedAt: row.submittedAt,
+      problem: validateSubmission(submission, { requireEvidence: false }),
+    };
   });
 }
 

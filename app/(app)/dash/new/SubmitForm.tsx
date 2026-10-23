@@ -119,6 +119,7 @@ export function SubmitForm({ projects, initial }: { projects: PickerProject[]; i
       <PanelLabel>your project</PanelLabel>
       <div className={styles.form} onBlur={saveDraft}>
         {problem && !problem.field ? <Banner tone="bad">{problem.message}</Banner> : null}
+        {errorFor("journals") ? <Banner tone="bad">{errorFor("journals")}</Banner> : null}
 
         <Field id={`${ids}-track`} label="project type" help="Choose the track that best describes what you built." error={errorFor("track")}>
           <div className={styles.trackOptions} role="group" aria-labelledby={`${ids}-track`}>
@@ -148,7 +149,7 @@ export function SubmitForm({ projects, initial }: { projects: PickerProject[]; i
           <Field
             id={`${ids}-repo`}
             label="repository"
-            help="Has to be public. We read your commits from it."
+            help="Has to be public. We read your commits and journal.md from it."
             error={errorFor("repo_url")}
           >
             <Input
@@ -171,7 +172,7 @@ export function SubmitForm({ projects, initial }: { projects: PickerProject[]; i
         <Field
           id={`${ids}-projects`}
           label="hackatime projects"
-          help="Pick the ones you worked on for this."
+          help="Optional if your repository has journal.md. Use a heading like ## 2026-10-23 Finished routing - 3.2 hours, followed by what you did. Only log time here that is not already tracked in Hackatime."
           error={errorFor("hackatime_projects")}
         >
           <HackatimePicker options={projects} value={picked} onChange={setPicked} />

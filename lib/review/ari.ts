@@ -1,5 +1,6 @@
-import { buildIngestPayload, validateSubmission } from "@/lib/ari/payload";
+import { buildIngestPayload } from "@/lib/ari/payload";
 import { ariBaseUrl, ariProgramId, signBody } from "@/lib/ari/signature";
+import { prepareSubmission } from "./prepare";
 
 import type { ReviewBackend, ReviewSubmission, SubmitOutcome, WithdrawOutcome } from "./types";
 
@@ -22,14 +23,18 @@ async function readField(response: Response): Promise<{ field?: string; message?
 }
 
 async function post(path: string, body: string): Promise<Response> {
+  const timestamp = String(Math.floor(Date.now() / 1000));
   return fetch(`${ariBaseUrl()}/api/ingest/${ariProgramId()}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Ari-Signature": signBody(body),
+      "X-Ari-Timestamp": timestamp,
+      "X-Ari-Signature": signBody(`${timestamp}.${body}`),
     },
     body,
     cache: "no-store",
+    redirect: "error",
+    signal: AbortSignal.timeout(15000),
   });
 }
 
@@ -37,10 +42,10 @@ export const ariBackend: ReviewBackend = {
   name: "ari",
 
   async submit(submission: ReviewSubmission): Promise<SubmitOutcome> {
-    const invalid = validateSubmission(submission);
-    if (invalid) return { status: "rejected", field: invalid.field, message: invalid.message };
+    const prepared = await prepareSubmission(submission);
+    if (prepared.status !== "ready") return prepared;
 
-    const body = JSON.stringify(buildIngestPayload(submission));
+    const body = JSON.stringify(buildIngestPayload(prepared.submission));
 
     let response: Response;
     try {

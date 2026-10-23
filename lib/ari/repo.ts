@@ -3,9 +3,12 @@ const TIMEOUT_MS = 5000;
 export function githubSlug(url: string): string | null {
   try {
     const parsed = new URL(url);
-    if (!/(^|\.)github\.com$/i.test(parsed.hostname)) return null;
+    if (!/^(www\.)?github\.com$/i.test(parsed.hostname)) return null;
     const parts = parsed.pathname.split("/").filter(Boolean);
     if (parts.length < 2) return null;
+    if (!parts.slice(0, 2).every((part) => /^[\w.-]+$/.test(part) && part !== "." && part !== "..")) {
+      return null;
+    }
     return `${parts[0]}/${parts[1].replace(/\.git$/i, "")}`;
   } catch {
     return null;
@@ -32,7 +35,7 @@ export async function repoIsReachable(url: string): Promise<boolean | null> {
   }
 }
 
-function githubHeaders(): Record<string, string> {
+export function githubHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
   const token = process.env.GITHUB_TOKEN?.trim();
   if (token) headers.Authorization = `Bearer ${token}`;

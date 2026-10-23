@@ -1,3 +1,5 @@
+import type { JournalEntry } from "@/lib/ari/journal";
+
 export type ProjectTrack = "hardware" | "software";
 
 export type ReviewSubmission = {
@@ -8,6 +10,8 @@ export type ReviewSubmission = {
   demoUrl: string;
   thumbnailUrl: string;
   hackatimeProjects: string[];
+  journals?: JournalEntry[];
+  journalUrl?: string;
   track: ProjectTrack;
   maker: { email: string; name: string; slackId: string };
   isUpdate?: boolean;
